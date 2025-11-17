@@ -8,6 +8,12 @@ export interface Store {
   price: number
 }
 
+export interface ApiProduct {
+  id: string
+  name: string
+  price: number
+}
+
 export interface Product {
   id: string
   name: string
