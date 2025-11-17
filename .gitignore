@@ -1,0 +1,23 @@
+# --- Geral ---
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# --- Frontend (Node/Next.js) ---
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.local
+
+# --- Backend (Go) ---
+backend/bin/
+backend/vendor/
+backend/*.exe
+backend/*.test
+backend/.env
+
+# --- Infra/Dados ---
+infra/postgres_data/
+infra/redis_data/

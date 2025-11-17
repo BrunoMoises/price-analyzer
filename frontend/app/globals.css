@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Dark mode by default - matching Price Analyzer design brief */
+  --background: 210 11% 7%; /* #121212 - Very dark gray */
+  --foreground: 0 0% 98%; /* Almost white text */
+  --card: 210 10% 12%; /* #1E1E1E - Slightly lighter gray for cards */
+  --card-foreground: 0 0% 98%;
+  --popover: 210 10% 12%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 142 76% 48%; /* #1DB954 - Vibrant green for primary actions and price drops */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 51%; /* #3B82F6 - Blue for secondary actions */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 210 10% 20%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 142 76% 48%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%; /* #EF4444 - Red for errors and price rises */
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 10% 20%;
+  --input: 210 10% 20%;
+  --ring: 142 76% 48%;
+  --chart-1: 142 76% 48%;
+  --chart-2: 217 33% 51%;
+  --chart-3: 271 81% 56%;
+  --chart-4: 43 96% 56%;
+  --chart-5: 10 79% 65%;
+  --radius: 0.5rem; /* 8px border radius */
+  --sidebar: 210 11% 7%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 142 76% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 210 10% 12%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 210 10% 20%;
+  --sidebar-ring: 142 76% 48%;
+}
+
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: oklch(from hsl(var(--background)) l c h);
+  --color-foreground: oklch(from hsl(var(--foreground)) l c h);
+  --color-card: oklch(from hsl(var(--card)) l c h);
+  --color-card-foreground: oklch(from hsl(var(--card-foreground)) l c h);
+  --color-popover: oklch(from hsl(var(--popover)) l c h);
+  --color-popover-foreground: oklch(from hsl(var(--popover-foreground)) l c h);
+  --color-primary: oklch(from hsl(var(--primary)) l c h);
+  --color-primary-foreground: oklch(from hsl(var(--primary-foreground)) l c h);
+  --color-secondary: oklch(from hsl(var(--secondary)) l c h);
+  --color-secondary-foreground: oklch(from hsl(var(--secondary-foreground)) l c h);
+  --color-muted: oklch(from hsl(var(--muted)) l c h);
+  --color-muted-foreground: oklch(from hsl(var(--muted-foreground)) l c h);
+  --color-accent: oklch(from hsl(var(--accent)) l c h);
+  --color-accent-foreground: oklch(from hsl(var(--accent-foreground)) l c h);
+  --color-destructive: oklch(from hsl(var(--destructive)) l c h);
+  --color-destructive-foreground: oklch(from hsl(var(--destructive-foreground)) l c h);
+  --color-border: oklch(from hsl(var(--border)) l c h);
+  --color-input: oklch(from hsl(var(--input)) l c h);
+  --color-ring: oklch(from hsl(var(--ring)) l c h);
+  --color-chart-1: oklch(from hsl(var(--chart-1)) l c h);
+  --color-chart-2: oklch(from hsl(var(--chart-2)) l c h);
+  --color-chart-3: oklch(from hsl(var(--chart-3)) l c h);
+  --color-chart-4: oklch(from hsl(var(--chart-4)) l c h);
+  --color-chart-5: oklch(from hsl(var(--chart-5)) l c h);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: oklch(from hsl(var(--sidebar)) l c h);
+  --color-sidebar-foreground: oklch(from hsl(var(--sidebar-foreground)) l c h);
+  --color-sidebar-primary: oklch(from hsl(var(--sidebar-primary)) l c h);
+  --color-sidebar-primary-foreground: oklch(from hsl(var(--sidebar-primary-foreground)) l c h);
+  --color-sidebar-accent: oklch(from hsl(var(--sidebar-accent)) l c h);
+  --color-sidebar-accent-foreground: oklch(from hsl(var(--sidebar-accent-foreground)) l c h);
+  --color-sidebar-border: oklch(from hsl(var(--sidebar-border)) l c h);
+  --color-sidebar-ring: oklch(from hsl(var(--sidebar-ring)) l c h);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
