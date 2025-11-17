@@ -16,15 +16,13 @@ jobs:
 
       - name: Push to Gitea
         run: |
-          # 1. Garante que estamos na branch main localmente
-          git checkout main
-          
-          # 2. Configura o remote do Gitea
+          # Configura o remote do Gitea
           git remote add gitea "https://${{ secrets.GITEA_USERNAME }}:${{ secrets.GITEA_TOKEN }}@gitea.bruno-moises.site/BrunoMoises/price-analyzer.git"
           
-          # 3. Configuração de segurança SSL (opcional, mas bom para certificados LetsEncrypt)
+          # Configurações globais para evitar erros de permissão em CI
+          git config --global --add safe.directory /github/workspace
           git config --global http.sslVerify false
           
-          # 4. Push explícito da branch main local para a main remota
-          git push gitea main:main --force
+          # O PULO DO GATO: Empurra o HEAD (onde estamos) para a branch main do Gitea
+          git push gitea HEAD:main --force
           git push gitea --tags --force
