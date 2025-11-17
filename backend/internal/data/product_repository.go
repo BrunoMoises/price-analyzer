@@ -85,3 +85,9 @@ func UpdateLastAlert(productID int) error {
 	_, err := DB.Exec("UPDATE products SET last_alert_at = NOW() WHERE id = $1", productID)
 	return err
 }
+
+func UpdateTargetPrice(productID int, targetPrice float64) error {
+	query := `UPDATE products SET target_price = $1, last_alert_at = NULL WHERE id = $2`
+	_, err := DB.Exec(query, targetPrice, productID)
+	return err
+}

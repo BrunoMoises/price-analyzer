@@ -7,17 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { toast } from 'sonner'
 
 interface AddAlertModalProps {
@@ -33,28 +27,59 @@ export function AddAlertModal({
   productName,
   productId,
 }: AddAlertModalProps) {
-  const [condition, setCondition] = useState<'below' | 'above'>('below')
   const [targetPrice, setTargetPrice] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSave = () => {
-    if (!targetPrice || parseFloat(targetPrice) <= 0) {
+  const handleSave = async () => {
+    if (!targetPrice) {
       toast.error('Preço inválido', {
-        description: 'Por favor, insira um preço válido',
+        description: 'Por favor, insira um valor para o alerta.',
       })
       return
     }
 
-    // Mock save - would save to database in real app
-    console.log('Saving alert:', { productId, condition, targetPrice })
+    const priceFloat = parseFloat(targetPrice.replace(',', '.'))
+    
+    if (isNaN(priceFloat) || priceFloat <= 0) {
+        toast.error('Valor incorreto', {
+            description: 'Digite um número positivo válido.',
+        })
+        return
+    }
 
-    toast.success('Alerta configurado!', {
-      description: `Você será notificado quando o preço estiver ${
-        condition === 'below' ? 'abaixo de' : 'acima de'
-      } $${targetPrice}`,
-    })
+    setIsLoading(true)
 
-    onOpenChange(false)
-    setTargetPrice('')
+    try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+        
+        const res = await fetch(`${apiUrl}/product/alert`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: Number(productId),
+                target_price: priceFloat
+            })
+        })
+
+        if (!res.ok) {
+            throw new Error('Erro na comunicação com servidor')
+        }
+
+        toast.success('Alerta configurado!', {
+            description: `Você será notificado no WhatsApp quando chegar em R$ ${targetPrice}`,
+        })
+
+        onOpenChange(false)
+        setTargetPrice('')
+
+    } catch (error) {
+        console.error(error)
+        toast.error('Erro ao salvar', {
+            description: 'Não foi possível criar o alerta. Tente novamente.',
+        })
+    } finally {
+        setIsLoading(false)
+    }
   }
 
   return (
@@ -62,45 +87,41 @@ export function AddAlertModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Configurar Alerta</DialogTitle>
+          <DialogDescription>
+             Receba uma notificação quando o preço cair.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <p className="text-sm text-muted-foreground">
-            Avise-me quando <strong className="text-foreground">{productName}</strong> estiver...
+            Avise-me quando <strong className="text-foreground">{productName}</strong> estiver abaixo de:
           </p>
           
           <div className="space-y-2">
-            <Label htmlFor="condition">Condição</Label>
-            <Select value={condition} onValueChange={(v) => setCondition(v as 'below' | 'above')}>
-              <SelectTrigger id="condition">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="below">Abaixo de</SelectItem>
-                <SelectItem value="above">Acima de</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="price">Preço Alvo ($)</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={targetPrice}
-              onChange={(e) => setTargetPrice(e.target.value)}
-            />
+            <Label htmlFor="price">Preço Alvo (R$)</Label>
+            <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                className="pl-9"
+                value={targetPrice}
+                onChange={(e) => setTargetPrice(e.target.value)}
+                />
+            </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>Salvar Alerta</Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? 'Salvando...' : 'Salvar Alerta'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

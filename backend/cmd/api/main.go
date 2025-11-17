@@ -18,6 +18,11 @@ type AddRequest struct {
 	URL string `json:"url"`
 }
 
+type AlertRequest struct {
+	ID          int     `json:"id"`
+	TargetPrice float64 `json:"target_price"`
+}
+
 func main() {
 	err := godotenv.Load() 
 	if err != nil {
@@ -32,6 +37,7 @@ func main() {
 	http.HandleFunc("/products", handleProducts)
 	http.HandleFunc("/product", handleProductDetails)
 	http.HandleFunc("/product/info", handleProductInfo)
+	http.HandleFunc("/product/alert", handleAlertSetup)
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
@@ -133,4 +139,38 @@ func handleProductInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(product)
+}
+
+func handleAlertSetup(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Método não permitido", 405)
+		return
+	}
+
+	type AlertRequest struct {
+		ID          int     `json:"id"`
+		TargetPrice float64 `json:"target_price"`
+	}
+
+	var req AlertRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "JSON inválido", 400)
+		return
+	}
+
+	err := data.UpdateTargetPrice(req.ID, req.TargetPrice)
+	if err != nil {
+		http.Error(w, "Erro ao atualizar alerta: "+err.Error(), 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"updated"}`))
 }
