@@ -2,14 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"fmt"
 
 	"github.com/joho/godotenv"
 
+	"price-analyzer-backend/internal/auth"
 	"price-analyzer-backend/internal/data"
+	"price-analyzer-backend/internal/server"
 	"price-analyzer-backend/internal/web"
 	"price-analyzer-backend/internal/worker"
 )
@@ -24,7 +26,7 @@ type AlertRequest struct {
 }
 
 func main() {
-	err := godotenv.Load() 
+	err := godotenv.Load()
 	if err != nil {
 		log.Println("Aviso: Arquivo .env não encontrado, usando variáveis de ambiente do OS.")
 	}
@@ -34,14 +36,16 @@ func main() {
 
 	worker.StartPriceMonitor()
 
+	http.HandleFunc("/auth/google/login", handleGoogleLogin)
+	http.HandleFunc("/auth/google/callback", handleGoogleCallback)
+
 	http.HandleFunc("/products", server.AuthenticateMiddleware(handleProducts))
-	http.HandleFunc("/product", server.AuthenticateMiddleware(handleProductDetails))
 	http.HandleFunc("/product/info", server.AuthenticateMiddleware(handleProductInfo))
 	http.HandleFunc("/product/alert", server.AuthenticateMiddleware(handleAlertSetup))
 	http.HandleFunc("/product/delete", server.AuthenticateMiddleware(handleDeleteProduct))
+	
+	http.HandleFunc("/product", server.AuthenticateMiddleware(handleProductDetails)) 
 
-	http.HandleFunc("/auth/google/login", handleGoogleLogin)
-    http.HandleFunc("/auth/google/callback", handleGoogleCallback)
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
@@ -50,6 +54,16 @@ func main() {
 	
 	log.Printf("Servidor rodando na porta %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
+    enableCors(&w)
+    auth.HandleGoogleLogin(w, r)
+}
+
+func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
+    enableCors(&w)
+    auth.HandleGoogleCallback(w, r)
 }
 
 func handleProducts(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +104,7 @@ func handleProducts(w http.ResponseWriter, r *http.Request) {
 			URL:          req.URL,
 			ImageURL:     image,
 			CurrentPrice: price,
+            UserID:       userID,
 		}
 
 		id, err := data.CreateProduct(newProduct)
@@ -103,12 +118,6 @@ func handleProducts(w http.ResponseWriter, r *http.Request) {
 		newProduct.ID = id
 		json.NewEncoder(w).Encode(newProduct)
 	}
-}
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
 func handleProductDetails(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +139,7 @@ func handleProductDetails(w http.ResponseWriter, r *http.Request) {
     var id int
     fmt.Sscanf(idStr, "%d", &id)
 
-    history, err := data.GetProductHistory(id)
+    history, err := data.GetProductHistory(id, userID) 
     if err != nil {
         http.Error(w, "Erro ao buscar histórico: "+err.Error(), 500)
         return
@@ -143,15 +152,26 @@ func handleProductInfo(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	if r.Method == "OPTIONS" { return }
 
+	userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "ID de usuário ausente.", http.StatusUnauthorized)
+        return
+    }
+
 	idStr := r.URL.Query().Get("id")
 	var id int
 	fmt.Sscanf(idStr, "%d", &id)
 
-	product, err := data.GetProductByID(id)
+	product, err := data.GetProductByID(id, userID) 
 	if err != nil {
 		http.Error(w, "Produto não encontrado", 404)
 		return
 	}
+
+    if product.UserID != userID {
+        http.Error(w, "Acesso negado.", http.StatusForbidden)
+        return
+    }
 
 	json.NewEncoder(w).Encode(product)
 }
@@ -226,4 +246,10 @@ func handleDeleteProduct(w http.ResponseWriter, r *http.Request) {
     }
 
     w.WriteHeader(http.StatusNoContent)
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }

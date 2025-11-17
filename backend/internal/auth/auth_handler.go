@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"price-analyzer-backend/internal/data"
-	"price-analyzer-backend/internal/server"
-
+	
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -24,17 +23,19 @@ type GoogleUserInfo struct {
 	Name  string `json:"name"`
 }
 
-var googleOauthConfig = &oauth2.Config{
-	ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-	ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-	RedirectURL:  "http://localhost:8080/auth/google/callback",
-	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
-	Endpoint:     google.Endpoint,
-}
-
 const oauthStateString = "randomStateString"
 
 const googleUserInfoAPI = "https://www.googleapis.com/oauth2/v2/userinfo"
+
+func getOauthConfig() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		RedirectURL:  "http://localhost:8080/auth/google/callback", 
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
+		Endpoint:     google.Endpoint,
+	}
+}
 
 func generateJWTToken(userID int) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
@@ -46,12 +47,12 @@ func generateJWTToken(userID int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
 func HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
-	url := googleOauthConfig.AuthCodeURL(oauthStateString)
+	config := getOauthConfig() 
+	url := config.AuthCodeURL(oauthStateString)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -61,7 +62,9 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := googleOauthConfig.Exchange(context.Background(), r.FormValue("code"))
+	config := getOauthConfig()
+
+	token, err := config.Exchange(context.Background(), r.FormValue("code"))
 	if err != nil {
 		log.Printf("Erro ao trocar código por token: %v", err)
 		http.Error(w, "Falha na autenticação.", http.StatusInternalServerError)

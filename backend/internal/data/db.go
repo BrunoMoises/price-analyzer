@@ -1,15 +1,18 @@
 package data
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/go-redis/redis/v8"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 )
 
 var DB *sqlx.DB
+var RDB *redis.Client
 
 func ConnectDB() {
 	dsn := fmt.Sprintf(
@@ -30,4 +33,19 @@ func ConnectDB() {
 	DB.SetMaxIdleConns(5)
 
 	log.Println("🚀 Conectado ao PostgreSQL com sucesso!")
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	RDB = redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+
+	if _, err := RDB.Ping(context.Background()).Result(); err != nil {
+		log.Println("⚠️ Aviso: Redis não conectado. O cache estará desabilitado.", err)
+	} else {
+		log.Println("🚀 Conectado ao Redis com sucesso!")
+	}
 }

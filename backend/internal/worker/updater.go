@@ -15,7 +15,7 @@ func StartPriceMonitor() {
 		for {
 			log.Println("🕵️ Worker: Verificando preços...")
 			
-			products, err := data.GetAllProducts()
+			products, err := data.GetAllProductsForWorker()
 			if err != nil {
 				log.Println("❌ Erro ao buscar produtos:", err)
 				time.Sleep(10 * time.Minute)
