@@ -13,6 +13,11 @@ type Product struct {
 	CreatedAt    time.Time `db:"created_at" json:"created_at"`
 }
 
+type PricePoint struct {
+	Price     float64   `db:"price" json:"price"`
+	ScrapedAt time.Time `db:"scraped_at" json:"date"`
+}
+
 func CreateProduct(p Product) (int, error) {
 	var id int
 	query := `
@@ -51,4 +56,24 @@ func UpdatePrice(productID int, newPrice float64) error {
 	}
 
 	return tx.Commit()
+}
+
+func GetProductHistory(productID int) ([]PricePoint, error) {
+	history := []PricePoint{}
+	
+	query := `
+		SELECT price, scraped_at 
+		FROM price_history 
+		WHERE product_id = $1 
+		ORDER BY scraped_at ASC`
+		
+	err := DB.Select(&history, query, productID)
+	return history, err
+}
+
+func GetProductByID(id int) (Product, error) {
+	var p Product
+	query := `SELECT id, name, url, image_url, current_price, created_at FROM products WHERE id = $1`
+	err := DB.Get(&p, query, id)
+	return p, err
 }

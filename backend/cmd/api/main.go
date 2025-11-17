@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"fmt"
 
 	"github.com/joho/godotenv"
 
@@ -29,6 +30,8 @@ func main() {
 	worker.StartPriceMonitor()
 
 	http.HandleFunc("/products", handleProducts)
+	http.HandleFunc("/product", handleProductDetails)
+	http.HandleFunc("/product/info", handleProductInfo)
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
@@ -91,4 +94,43 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+
+func handleProductDetails(w http.ResponseWriter, r *http.Request) {
+    enableCors(&w)
+    if r.Method == "OPTIONS" { return }
+
+    idStr := r.URL.Query().Get("id")
+    if idStr == "" {
+        http.Error(w, "ID é obrigatório", 400)
+        return
+    }
+
+    var id int
+    fmt.Sscanf(idStr, "%d", &id)
+
+    history, err := data.GetProductHistory(id)
+    if err != nil {
+        http.Error(w, "Erro ao buscar histórico: "+err.Error(), 500)
+        return
+    }
+
+    json.NewEncoder(w).Encode(history)
+}
+
+func handleProductInfo(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	if r.Method == "OPTIONS" { return }
+
+	idStr := r.URL.Query().Get("id")
+	var id int
+	fmt.Sscanf(idStr, "%d", &id)
+
+	product, err := data.GetProductByID(id)
+	if err != nil {
+		http.Error(w, "Produto não encontrado", 404)
+		return
+	}
+
+	json.NewEncoder(w).Encode(product)
 }
