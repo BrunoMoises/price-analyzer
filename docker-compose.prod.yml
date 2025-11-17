@@ -63,7 +63,10 @@ services:
 
   # --- Frontend (Next.js) ---
   frontend:
-    build: ./frontend
+    build:
+    context: ./frontend
+    args:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: price_frontend
     restart: always
     environment:
