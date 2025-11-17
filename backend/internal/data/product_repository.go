@@ -1,16 +1,19 @@
 package data
 
 import (
+	"database/sql"
 	"time"
 )
 
 type Product struct {
-	ID           int       `db:"id" json:"id"`
-	Name         string    `db:"name" json:"name"`
-	URL          string    `db:"url" json:"url"`
-	ImageURL     string    `db:"image_url" json:"image_url"`
-	CurrentPrice float64   `db:"current_price" json:"price"`
-	CreatedAt    time.Time `db:"created_at" json:"created_at"`
+	ID           int          `db:"id" json:"id"`
+	Name         string       `db:"name" json:"name"`
+	URL          string       `db:"url" json:"url"`
+	ImageURL     string       `db:"image_url" json:"image_url"`
+	CurrentPrice float64      `db:"current_price" json:"price"`
+	CreatedAt    time.Time    `db:"created_at" json:"created_at"`
+	TargetPrice  float64      `db:"target_price" json:"target_price"`
+	LastAlertAt  sql.NullTime `db:"last_alert_at" json:"-"`
 }
 
 type PricePoint struct {
@@ -31,7 +34,7 @@ func CreateProduct(p Product) (int, error) {
 
 func GetAllProducts() ([]Product, error) {
 	var products []Product
-	err := DB.Select(&products, `SELECT id, name, url, image_url, current_price, created_at 
+	err := DB.Select(&products, `SELECT id, name, url, image_url, current_price, created_at, target_price, last_alert_at
 								FROM products 
 								ORDER BY created_at DESC`)
 	return products, err
@@ -76,4 +79,9 @@ func GetProductByID(id int) (Product, error) {
 	query := `SELECT id, name, url, image_url, current_price, created_at FROM products WHERE id = $1`
 	err := DB.Get(&p, query, id)
 	return p, err
+}
+
+func UpdateLastAlert(productID int) error {
+	_, err := DB.Exec("UPDATE products SET last_alert_at = NOW() WHERE id = $1", productID)
+	return err
 }
