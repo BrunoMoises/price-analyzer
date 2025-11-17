@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { Header } from '@/components/header'
 import { AddProductBar } from '@/components/add-product-bar'
 import { ProductGrid } from '@/components/product-grid'
 import { Product, ApiProduct } from '@/lib/types'
 import { toast } from 'sonner'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useAuth, getAuthHeader, createAuthHeaders } from '@/app/context/AuthContext'
+import { useAuth, getAuthHeader } from '@/app/context/AuthContext'
 
-export default function HomePage() {
+function HomeContent() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
@@ -31,7 +31,6 @@ export default function HomePage() {
 
   useEffect(() => {
     const jwtToken = searchParams.get('token')
-
     if (jwtToken) {
       login(jwtToken)
     }
@@ -42,31 +41,24 @@ export default function HomePage() {
         setIsLoading(false);
         return;
     }
-    
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-      
       const res = await fetch(`${apiUrl}/products`, {
-        headers: createAuthHeaders(),
+        headers: getAuthHeader() as HeadersInit,
       })
       
       if (!res.ok) {
-          if (res.status === 401) {
-              throw new Error("Sessão expirada. Faça login novamente.");
-          }
-          throw new Error('Falha ao buscar dados do servidor');
+          if (res.status === 401) throw new Error("Sessão expirada.");
+          throw new Error('Falha ao buscar dados');
       }
       
       const data = await res.json()
-
       const safeData = Array.isArray(data) ? data : []
-
       const richProducts = safeData.map(adaptProduct)
       setProducts(richProducts)
 
     } catch (error) {
       console.error("Erro ao conectar no Backend:", error)
-      toast.error('Erro de Conexão', { description: "Sua sessão pode ter expirado ou o backend não está rodando." });
     } finally {
       setIsLoading(false)
     }
@@ -78,41 +70,30 @@ export default function HomePage() {
     }
   }, [isAuthenticated, fetchProducts])
 
-
   const handleAddProduct = async (url: string) => {
     if (!url || !token) return;
-
     try {
-      console.log("Enviando URL para o backend...", url)
-
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-      
       const res = await fetch(`${apiUrl}/products`, {
         method: 'POST',
-        headers: createAuthHeaders({
-          'Content-Type': 'application/json'
-        }),
+        headers: {
+          ...(getAuthHeader() as HeadersInit),
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ url }),
       })
-
-      if (!res.ok) {
-        throw new Error('Erro ao adicionar produto. Verifique se a URL é válida.')
-      }
-
+      if (!res.ok) throw new Error('Erro ao adicionar produto.')
       const newApiProduct: ApiProduct = await res.json()
       const newProduct = adaptProduct(newApiProduct)
-      
       setProducts((prevProducts) => [...prevProducts, newProduct])
-
-      toast.success('Produto adicionado!', {
-        description: `${newProduct.name} está sendo monitorado`,
-      })
+      toast.success('Produto adicionado!')
     } catch (error) {
-      console.error("Falha ao adicionar produto:", error)
-      toast.error('Falha ao adicionar produto!', {
-        description: 'Erro ao adicionar produto. Tente uma URL válida.',
-      })
+      toast.error('Falha ao adicionar produto!')
     }
+  }
+  
+  const handleDeleteProduct = (deletedId: string) => {
+      setProducts((currentProducts) => currentProducts.filter(p => p.id !== deletedId))
   }
 
   if (!isAuthenticated && !searchParams.get('token')) {
@@ -123,15 +104,9 @@ export default function HomePage() {
   if (!isAuthenticated || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground animate-pulse">Carregando sessão e produtos...</p>
+        <p className="text-muted-foreground animate-pulse">Carregando...</p>
       </div>
     )
-  }
-
-  const handleDeleteProduct = (deletedId: string) => {
-      setProducts((currentProducts) => 
-        currentProducts.filter(p => p.id !== deletedId)
-      )
   }
 
   return (
@@ -142,5 +117,13 @@ export default function HomePage() {
         <ProductGrid products={products} onDeleteProduct={handleDeleteProduct} />
       </main>
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Carregando app...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }
