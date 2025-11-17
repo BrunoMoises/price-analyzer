@@ -21,8 +21,6 @@ type AddProductRequest struct {
 var products []Product
 
 func main() {
-	products = append(products, Product{ID: "1", Name: "RTX 4090", Price: 12500.00, ImageURL: "https://m.media-amazon.com/images/I/712+A5gHq+L._AC_SX679_.jpg"})
-
 	http.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 
