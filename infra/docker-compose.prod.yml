@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # --- Banco de Dados ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: price_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Cache ---
+  redis:
+    image: redis:alpine
+    container_name: price_cache
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- Backend (Go) ---
+  backend:
+    build: ./backend
+    container_name: price_backend
+    restart: always
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      REDIS_ADDR: redis:6379
+      API_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # Importante: URLs públicas para o redirect do Google
+      API_PUBLIC_URL: ${API_PUBLIC_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      # Notificações
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      WHATSAPP_PHONE: ${WHATSAPP_PHONE}
+      WHATSAPP_APIKEY: ${WHATSAPP_APIKEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # --- Frontend (Next.js) ---
+  frontend:
+    build: ./frontend
+    container_name: price_frontend
+    restart: always
+    environment:
+      # URL que o navegador usa para falar com a API
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    ports:
+      - "3000:3000" # Expõe para o Cloudflare Tunnel pegar
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
