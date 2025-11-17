@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"embed"
 
 	"github.com/joho/godotenv"
 
@@ -25,6 +26,8 @@ type AlertRequest struct {
 	TargetPrice float64 `json:"target_price"`
 }
 
+var migrationFiles embed.FS
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -33,6 +36,16 @@ func main() {
 
 	log.Println("Iniciando servidor...")
 	data.ConnectDB()
+
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable",
+        os.Getenv("DB_USER"),
+        os.Getenv("DB_PASSWORD"),
+        os.Getenv("DB_HOST"),
+        os.Getenv("DB_NAME"),
+    )
+
+	log.Println("Verificando migrações...")
+    data.RunMigrations(dbURL)
 
 	worker.StartPriceMonitor()
 	worker.StartTelegramListener()
