@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { Product, ApiProduct } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
+import { getAuthHeader, useAuth } from '@/app/context/AuthContext'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -21,17 +22,27 @@ export default function ProductDetailsPage({ params }: PageProps) {
   const productId = resolvedParams.id
   
   const router = useRouter()
+  const { token, isAuthenticated } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function fetchProductData() {
+      if (!productId || !token) return
+
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
         
-        const res = await fetch(`${apiUrl}/product/info?id=${productId}`)
+        const res = await fetch(`${apiUrl}/product/info?id=${productId}`, {
+            headers: getAuthHeader() as HeadersInit 
+        })
         
-        if (!res.ok) throw new Error('Produto não encontrado')
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                throw new Error('Sessão expirada ou sem permissão')
+            }
+            throw new Error('Produto não encontrado')
+        }
         
         const apiData: ApiProduct = await res.json()
 
@@ -48,37 +59,34 @@ export default function ProductDetailsPage({ params }: PageProps) {
         setProduct(adaptedProduct)
       } catch (error) {
         console.error("Erro ao carregar produto:", error)
+        setProduct(null)
       } finally {
         setIsLoading(false)
       }
     }
 
-    if (productId) {
-      fetchProductData()
+    if (isAuthenticated) {
+        fetchProductData()
+    } else if (!isAuthenticated) {
+        setIsLoading(true) 
     }
-  }, [productId])
+  }, [productId, token, isAuthenticated])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-12 text-center text-white animate-pulse">
-          Carregando informações do produto...
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center text-white">
+        Carregando...
       </div>
     )
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-12 text-center">
-          <p className="text-muted-foreground">Produto não encontrado no sistema.</p>
-          <Button variant="link" onClick={() => router.push('/')}>
+      <div className="min-h-screen bg-background text-center pt-20">
+        <p className="text-muted-foreground mb-4">Produto não encontrado ou acesso negado.</p>
+        <Button variant="link" onClick={() => router.push('/')}>
             Voltar para o início
-          </Button>
-        </div>
+        </Button>
       </div>
     )
   }
@@ -126,9 +134,7 @@ export default function ProductDetailsPage({ params }: PageProps) {
 
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-semibold mb-6">Histórico de Preços</h2>
-          
           <PriceHistoryChart productId={product.id} />
-          
         </div>
 
         <AlertSetup productName={product.name} productId={product.id} />

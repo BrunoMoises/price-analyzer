@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
+import { getAuthHeader, useAuth } from '@/app/context/AuthContext'
 
 interface PriceHistoryChartProps {
   productId: string
@@ -17,14 +18,18 @@ interface ChartDataPoint {
 export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
   const [data, setData] = useState<ChartDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { token } = useAuth()
 
   useEffect(() => {
     async function fetchHistory() {
-      if (!productId) return
+      if (!productId || !token) return
 
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-        const res = await fetch(`${apiUrl}/product?id=${productId}`)
+        
+        const res = await fetch(`${apiUrl}/product?id=${productId}`, {
+            headers: getAuthHeader() as HeadersInit 
+        })
         
         if (!res.ok) throw new Error("Erro ao buscar histórico")
 
@@ -50,7 +55,7 @@ export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
     }
 
     fetchHistory()
-  }, [productId])
+  }, [productId, token])
 
   if (isLoading) {
     return <div className="h-[300px] flex items-center justify-center text-muted-foreground animate-pulse">Carregando histórico...</div>
