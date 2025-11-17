@@ -105,6 +105,12 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	apiBaseURL := os.Getenv("FRONTEND_URL")
+
+	if appBaseURL == "" {
+        appBaseURL = "http://localhost:3000"
+    }
+
 	redirectURL := fmt.Sprintf("http://localhost:3000/?token=%s", jwtToken)
 	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
