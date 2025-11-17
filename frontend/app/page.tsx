@@ -13,7 +13,7 @@ export default function HomePage() {
 
   const adaptProduct = (apiData: ApiProduct): Product => {
     return {
-      id: apiData.id,
+      id: String(apiData.id),
       name: apiData.name,
       currentPrice: apiData.price,
       imageUrl: apiData.image_url || '/placeholder.svg', 
