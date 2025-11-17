@@ -36,3 +36,30 @@ Prerequisites: **Docker** and **Docker Compose**.
    ```bash
    git clone https://github.com/BrunoMoises/price-analyzer.git
    cd price-analyzer
+   ```
+
+2. **Start the Application**
+
+Run the entire stack (Database, Backend, Frontend) with a single command:
+
+   ```bash
+   cd infra
+   docker-compose up -d
+   ```
+
+3. **Access the Dashboard**
+
+Open http://localhost:3000 in your browser.
+
+## 📂 Project Structure
+
+   ```bash
+   .
+   ├── backend/    # Go API Gateway and Services
+   ├── frontend/   # Next.js Application
+   └── infra/      # Docker and Configuration files
+   ```
+
+## 📝 License
+
+This project is licensed under the MIT License.
