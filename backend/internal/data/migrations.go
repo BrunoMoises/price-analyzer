@@ -12,7 +12,7 @@ import (
 
 var migrationFS embed.FS
 
-func RunMigrations(migrationFiles embed.FS, dbURL string) {
+func RunMigrations(dbURL string) {
 	sourceDriver, err := iofs.New(migrationFS, "migrations_files")
 	if err != nil {
 		log.Fatal("Erro ao criar driver de migração:", err)
