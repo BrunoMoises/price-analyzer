@@ -14,7 +14,6 @@ type Product struct {
 
 func main() {
 	http.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
-        // CORS (Essencial para o React falar com o Go)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/json")
 
