@@ -72,7 +72,7 @@ services:
       # URL que o navegador usa para falar com a API
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
-      - "3000:3000" # Expõe para o Cloudflare Tunnel pegar
+      - "3002:3000" # Expõe para o Cloudflare Tunnel pegar
     depends_on:
       - backend
     networks:
