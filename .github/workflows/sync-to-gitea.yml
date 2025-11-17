@@ -1,0 +1,29 @@
+name: Mirror to Gitea
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Gitea
+        run: |
+          # Configura a URL remota com as credenciais injetadas
+          # Formato: https://USER:TOKEN@DOMINIO/USER/REPO.git
+          
+          git remote add gitea "https://${{ secrets.GITEA_USERNAME }}:${{ secrets.GITEA_TOKEN }}@gitea.bruno-moises.site/BrunoMoises/price-analyzer.git"
+          
+          # Desabilita verificação estrita de SSL se o certificado for auto-assinado (opcional, mas seguro ter)
+          git config --global http.sslVerify false
+          
+          # Empurra código e tags
+          git push gitea main --force
+          git push gitea --tags --force
