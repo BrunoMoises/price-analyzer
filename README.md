@@ -34,5 +34,5 @@ Prerequisites: **Docker** and **Docker Compose**.
 
 1. **Clone the repository**
    ```bash
-   git clone [https://github.com/SEU-USUARIO/price-analyzer.git](https://github.com/SEU-USUARIO/price-analyzer.git)
+   git clone [https://github.com/BrunoMoises/price-analyzer.git](https://github.com/BrunoMoises/price-analyzer.git)
    cd price-analyzer
