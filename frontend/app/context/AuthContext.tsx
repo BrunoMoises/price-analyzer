@@ -7,7 +7,8 @@ interface User {
   id: number
   name: string
   email: string
-  avatar_url: string
+  avatar_url: string,
+  telegram_chat_id?: string
 }
 
 interface AuthContextType {

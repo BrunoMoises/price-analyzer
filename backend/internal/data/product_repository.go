@@ -14,18 +14,20 @@ type User struct {
 	Email    string `db:"email" json:"email"`
 	Name     string `db:"name" json:"name"`
 	AvatarURL string `db:"avatar_url" json:"avatar_url"`
+	TelegramChatID string `db:"telegram_chat_id" json:"telegram_chat_id"`
 }
 
 type Product struct {
-	ID           int          `db:"id" json:"id"`
-	UserID       int          `db:"user_id" json:"user_id"`
-	Name         string       `db:"name" json:"name"`
-	URL          string       `db:"url" json:"url"`
-	ImageURL     string       `db:"image_url" json:"image_url"`
-	CurrentPrice float64      `db:"current_price" json:"price"`
-	CreatedAt    time.Time    `db:"created_at" json:"created_at"`
-	TargetPrice  float64      `db:"target_price" json:"target_price"`
-	LastAlertAt  sql.NullTime `db:"last_alert_at" json:"-"`
+	ID             int          `db:"id" json:"id"`
+	UserID         int          `db:"user_id" json:"user_id"`
+	Name           string       `db:"name" json:"name"`
+	URL            string       `db:"url" json:"url"`
+	ImageURL       string       `db:"image_url" json:"image_url"`
+	CurrentPrice   float64      `db:"current_price" json:"price"`
+	CreatedAt      time.Time    `db:"created_at" json:"created_at"`
+	TargetPrice    float64      `db:"target_price" json:"target_price"`
+	LastAlertAt    sql.NullTime `db:"last_alert_at" json:"-"`
+	TelegramChatID string       `db:"telegram_chat_id" json:"-"`
 }
 
 type PricePoint struct {
@@ -63,7 +65,7 @@ func GetOrCreateUser(googleID, email, name, avatarURL string) (User, error) {
 
 func GetUserByID(userID int) (User, error) {
     var user User
-    query := `SELECT id, google_id, email, name, avatar_url FROM users WHERE id = $1`
+    query := `SELECT id, google_id, email, name, avatar_url, telegram_chat_id FROM users WHERE id = $1`
     err := DB.Get(&user, query, userID)
     return user, err
 }
@@ -122,9 +124,12 @@ func GetAllProductsForWorker() ([]Product, error) {
 	products := []Product{}
 
 	query := `
-		SELECT id, user_id, name, url, image_url, current_price, created_at, target_price, last_alert_at 
-		FROM products 
-		ORDER BY created_at DESC`
+		SELECT p.id, p.user_id, p.name, p.url, p.image_url, p.current_price, 
+               p.created_at, p.target_price, p.last_alert_at,
+               u.telegram_chat_id
+		FROM products p
+        JOIN users u ON p.user_id = u.id
+		ORDER BY p.created_at DESC`
 
 	err := DB.Select(&products, query)
 	return products, err
@@ -202,4 +207,9 @@ func InvalidateUserCache(userID int) {
 		key := fmt.Sprintf("products:user:%d", userID)
 		RDB.Del(context.Background(), key)
 	}
+}
+
+func UpdateUserTelegram(userID int, chatID string) error {
+    _, err := DB.Exec("UPDATE users SET telegram_chat_id = $1 WHERE id = $2", chatID, userID)
+    return err
 }

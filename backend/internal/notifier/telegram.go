@@ -7,9 +7,8 @@ import (
 	"os"
 )
 
-func SendTelegram(message string) error {
+func SendTelegram(message string, chatID string) error {
 	token := os.Getenv("TELEGRAM_TOKEN")
-	chatID := os.Getenv("TELEGRAM_CHAT_ID")
 
 	if token == "" || chatID == "" {
 		return fmt.Errorf("credenciais do telegram não configuradas")

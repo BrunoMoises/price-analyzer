@@ -35,10 +35,12 @@ func main() {
 	data.ConnectDB()
 
 	worker.StartPriceMonitor()
+	worker.StartTelegramListener()
 
 	http.HandleFunc("/auth/google/login", handleGoogleLogin)
 	http.HandleFunc("/auth/google/callback", handleGoogleCallback)
 	http.HandleFunc("/auth/me", server.AuthenticateMiddleware(handleMe))
+	http.HandleFunc("/user/settings", server.AuthenticateMiddleware(handleUserSettings))
 
 	http.HandleFunc("/products", server.AuthenticateMiddleware(handleProducts))
 	http.HandleFunc("/product/info", server.AuthenticateMiddleware(handleProductInfo))
@@ -272,4 +274,33 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
     }
 
     json.NewEncoder(w).Encode(user)
+}
+
+func handleUserSettings(w http.ResponseWriter, r *http.Request) {
+    enableCors(&w)
+    if r.Method == "OPTIONS" { w.WriteHeader(http.StatusOK); return }
+
+    userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "Não autorizado", http.StatusUnauthorized)
+        return
+    }
+
+    if r.Method == "POST" {
+        type SettingsReq struct {
+            TelegramChatID string `json:"telegram_chat_id"`
+        }
+        var req SettingsReq
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+            http.Error(w, "JSON inválido", 400)
+            return
+        }
+
+        err := data.UpdateUserTelegram(userID, req.TelegramChatID)
+        if err != nil {
+            http.Error(w, "Erro ao salvar: "+err.Error(), 500)
+            return
+        }
+        w.WriteHeader(http.StatusOK)
+    }
 }

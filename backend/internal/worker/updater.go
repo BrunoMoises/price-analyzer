@@ -42,12 +42,14 @@ func StartPriceMonitor() {
 							msg := fmt.Sprintf("🚨 *PREÇO CAIU!*\n\n📦 *%s*\n💰 Preço Atual: R$ %.2f\n🎯 Sua Meta: R$ %.2f\n\n[Ver Produto](%s)", 
 								p.Name, currentPrice, p.TargetPrice, p.URL)
 							
-							err := notifier.SendTelegram(msg)
-							if err == nil {
-								log.Printf("🔔 Notificação enviada para %s", p.Name)
-								data.UpdateLastAlert(p.ID) 
+							if p.TelegramChatID != "" {
+								err := notifier.SendTelegram(msg, p.TelegramChatID) 
+								if err == nil {
+									log.Printf("🔔 Notificação enviada para %s (User ID: %d)", p.Name, p.UserID)
+									data.UpdateLastAlert(p.ID)
+								}
 							} else {
-								log.Printf("❌ Falha ao enviar Telegram: %v", err)
+								log.Printf("⚠️ Alerta ignorado para %s: Usuário %d sem Telegram configurado.", p.Name, p.UserID)
 							}
 						}
 					}

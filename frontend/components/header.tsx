@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { TrendingDown, LogOut, User as UserIcon } from 'lucide-react'
+import { TrendingDown, LogOut, User as UserIcon, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/app/context/AuthContext'
 import {
@@ -13,9 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useState } from 'react'
+import { SettingsModal } from './settings-modal'
 
 export function Header() {
   const { user, logout } = useAuth()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const initials = user?.name
     ? user.name
@@ -39,6 +42,7 @@ export function Header() {
         
         <div className="flex items-center gap-4">
             {user ? (
+              <>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 border border-border">
@@ -57,6 +61,10 @@ export function Header() {
                                 </p>
                             </div>
                         </DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="cursor-pointer">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Configurações</span>
+                      </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={logout} className="text-red-500 cursor-pointer focus:text-red-500">
                             <LogOut className="mr-2 h-4 w-4" />
@@ -64,6 +72,8 @@ export function Header() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+              </>
             ) : (
                 <Button variant="ghost" size="icon" className="rounded-full">
                      <UserIcon className="w-5 h-5" />
