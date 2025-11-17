@@ -34,10 +34,14 @@ func main() {
 
 	worker.StartPriceMonitor()
 
-	http.HandleFunc("/products", handleProducts)
-	http.HandleFunc("/product", handleProductDetails)
-	http.HandleFunc("/product/info", handleProductInfo)
-	http.HandleFunc("/product/alert", handleAlertSetup)
+	http.HandleFunc("/products", server.AuthenticateMiddleware(handleProducts))
+	http.HandleFunc("/product", server.AuthenticateMiddleware(handleProductDetails))
+	http.HandleFunc("/product/info", server.AuthenticateMiddleware(handleProductInfo))
+	http.HandleFunc("/product/alert", server.AuthenticateMiddleware(handleAlertSetup))
+	http.HandleFunc("/product/delete", server.AuthenticateMiddleware(handleDeleteProduct))
+
+	http.HandleFunc("/auth/google/login", handleGoogleLogin)
+    http.HandleFunc("/auth/google/callback", handleGoogleCallback)
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
@@ -52,11 +56,16 @@ func handleProducts(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	if r.Method == "OPTIONS" { return }
 
+	userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "ID de usuário ausente.", http.StatusUnauthorized)
+        return
+    }
+
 	if r.Method == "GET" {
-		products, err := data.GetAllProducts()
+		products, err := data.GetAllProducts(userID)
 		if err != nil {
-			http.Error(w, "Erro ao buscar produtos", 500)
-			log.Println(err)
+			http.Error(w, "Erro ao buscar produtos", http.StatusInternalServerError)
 			return
 		}
 		json.NewEncoder(w).Encode(products)
@@ -66,13 +75,13 @@ func handleProducts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		var req AddRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "JSON inválido", 400)
+			http.Error(w, "JSON inválido", http.StatusInternalServerError)
 			return
 		}
 
 		title, image, price, err := web.ScrapeProduct(req.URL)
 		if err != nil {
-			http.Error(w, "Erro no scraper: "+err.Error(), 500)
+			http.Error(w, "Erro no scraper: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -105,6 +114,12 @@ func enableCors(w *http.ResponseWriter) {
 func handleProductDetails(w http.ResponseWriter, r *http.Request) {
     enableCors(&w)
     if r.Method == "OPTIONS" { return }
+
+	userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "ID de usuário ausente.", http.StatusUnauthorized)
+        return
+    }
 
     idStr := r.URL.Query().Get("id")
     if idStr == "" {
@@ -149,6 +164,12 @@ func handleAlertSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "ID de usuário ausente.", http.StatusUnauthorized)
+        return
+    }
+
 	if r.Method != "POST" {
 		http.Error(w, "Método não permitido", 405)
 		return
@@ -165,7 +186,7 @@ func handleAlertSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := data.UpdateTargetPrice(req.ID, req.TargetPrice)
+	err := data.UpdateTargetPrice(req.ID, userID, req.TargetPrice)
 	if err != nil {
 		http.Error(w, "Erro ao atualizar alerta: "+err.Error(), 500)
 		return
@@ -173,4 +194,36 @@ func handleAlertSetup(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"updated"}`))
+}
+
+func handleDeleteProduct(w http.ResponseWriter, r *http.Request) {
+    enableCors(&w)
+    if r.Method != "DELETE" {
+        http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+        return
+    }
+
+    userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "Falha na autenticação.", http.StatusUnauthorized)
+        return
+    }
+
+    productIDStr := r.URL.Query().Get("id")
+    if productIDStr == "" {
+        http.Error(w, "ID do produto ausente.", http.StatusBadRequest)
+        return
+    }
+    
+    var productID int
+    fmt.Sscanf(productIDStr, "%d", &productID)
+
+    err := data.DeleteProduct(productID, userID)
+    
+    if err != nil {
+        http.Error(w, "Erro ao deletar produto: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
 }

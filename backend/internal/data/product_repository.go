@@ -5,8 +5,16 @@ import (
 	"time"
 )
 
+type User struct {
+    ID        int    `db:"id" json:"id"`
+    GoogleID  string `db:"google_id" json:"google_id"`
+    Email     string `db:"email" json:"email"`
+    Name      string `db:"name" json:"name"`
+}
+
 type Product struct {
 	ID           int          `db:"id" json:"id"`
+	UserID       int          `db:"user_id" json:"user_id"`
 	Name         string       `db:"name" json:"name"`
 	URL          string       `db:"url" json:"url"`
 	ImageURL     string       `db:"image_url" json:"image_url"`
@@ -21,22 +29,51 @@ type PricePoint struct {
 	ScrapedAt time.Time `db:"scraped_at" json:"date"`
 }
 
-func CreateProduct(p Product) (int, error) {
+func GetOrCreateUser(googleID, email, name string) (User, error) {
+    var user User
+    query := `SELECT id, email, name FROM users WHERE google_id = $1`
+    err := DB.Get(&user, query, googleID)
+
+    if err == nil {
+        return user, nil
+    }
+    if err != sql.ErrNoRows {
+        return User{}, err
+    }
+
+    insertQuery := `INSERT INTO users (google_id, email, name) VALUES ($1, $2, $3) RETURNING id`
+    var newID int
+    err = DB.QueryRow(insertQuery, googleID, email, name).Scan(&newID)
+    
+    if err == nil {
+        user.ID = newID
+        user.GoogleID = googleID
+        user.Email = email
+        user.Name = name
+    }
+    return user, err
+}
+
+func CreateProduct(p Product, userID int) (int, error) {
 	var id int
 	query := `
-		INSERT INTO products (name, url, image_url, current_price) 
-		VALUES ($1, $2, $3, $4) 
+		INSERT INTO products (name, url, image_url, current_price, user_id) 
+		VALUES ($1, $2, $3, $4, $5) 
 		RETURNING id`
 	
-	err := DB.QueryRow(query, p.Name, p.URL, p.ImageURL, p.CurrentPrice).Scan(&id)
+	err := DB.QueryRow(query, p.Name, p.URL, p.ImageURL, p.CurrentPrice, userID).Scan(&id)
 	return id, err
 }
 
-func GetAllProducts() ([]Product, error) {
-	var products []Product
-	err := DB.Select(&products, `SELECT id, name, url, image_url, current_price, created_at, target_price, last_alert_at
+func GetAllProducts(userID int) ([]Product, error) {
+	var products []Product{}
+
+	query := `SELECT id, name, url, image_url, current_price, created_at, target_price, last_alert_at
 								FROM products 
-								ORDER BY created_at DESC`)
+								WHERE user_id = $1
+								ORDER BY created_at DESC`
+
+	err := DB.Select(&products, query, userID)
 	return products, err
 }
 
@@ -90,4 +127,9 @@ func UpdateTargetPrice(productID int, targetPrice float64) error {
 	query := `UPDATE products SET target_price = $1, last_alert_at = NULL WHERE id = $2`
 	_, err := DB.Exec(query, targetPrice, productID)
 	return err
+}
+
+func DeleteProduct(productID int, userID int) error {
+    _, err := DB.Exec("DELETE FROM products WHERE id = $1 AND user_id = $2", productID, userID)
+    return err
 }
