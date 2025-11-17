@@ -8,6 +8,7 @@ import { Bell, TrendingDown } from 'lucide-react'
 import { Product } from '@/lib/types'
 import { useState } from 'react'
 import { AddAlertModal } from '@/components/add-alert-modal'
+import { formatCurrency } from '@/lib/utils'
 
 interface ProductCardProps {
   product: Product
@@ -35,7 +36,7 @@ export function ProductCard({ product }: ProductCardProps) {
           
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <TrendingDown className="w-4 h-4 text-primary" />
-            <span>Menor: R$ {product.lowestPrice.toFixed(2)}</span>
+            <span>Menor: R$ {formatCurrency(product.lowestPrice)}</span>
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex gap-2">

@@ -10,6 +10,7 @@ import { PriceByStoreList } from '@/components/price-by-store-list'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { Product } from '@/lib/types'
+import { formatCurrency } from '@/lib/utils'
 
 // Mock data - would come from database/API in real app
 const mockProducts: Product[] = [
@@ -127,7 +128,7 @@ export default function ProductDetailsPage() {
               <div className="text-sm text-muted-foreground">
                 Menor preço registrado:{' '}
                 <span className="text-foreground font-semibold">
-                  R$ {product.lowestPrice.toFixed(2)}
+                  R$ {formatCurrency(product.lowestPrice)}
                 </span>
               </div>
             </div>

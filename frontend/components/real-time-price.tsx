@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 
 interface RealTimePriceProps {
   price: number
@@ -40,7 +40,7 @@ export function RealTimePrice({ price, size = 'default' }: RealTimePriceProps) {
           priceState === 'rise' && 'text-destructive animate-pulse'
         )}
       >
-        R$ {price.toFixed(2)}
+        R$ {formatCurrency(price)}
       </div>
       
       {isConnected && (
