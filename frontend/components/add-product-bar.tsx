@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 interface AddProductBarProps {
   onAddProduct: (url: string) => void
@@ -12,16 +12,13 @@ interface AddProductBarProps {
 
 export function AddProductBar({ onAddProduct }: AddProductBarProps) {
   const [url, setUrl] = useState('')
-  const { toast } = useToast()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!url.trim()) {
-      toast({
-        title: 'URL necessária',
+      toast.error('URL necessária', {
         description: 'Por favor, cole uma URL de produto',
-        variant: 'destructive',
       })
       return
     }
@@ -29,8 +26,7 @@ export function AddProductBar({ onAddProduct }: AddProductBarProps) {
     onAddProduct(url)
     setUrl('')
     
-    toast({
-      title: 'Produto adicionado!',
+    toast.success('Produto adicionado!', {
       description: 'O produto está sendo monitorado',
     })
   }

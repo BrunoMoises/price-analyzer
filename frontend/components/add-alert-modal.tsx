@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 interface AddAlertModalProps {
   open: boolean
@@ -35,14 +35,11 @@ export function AddAlertModal({
 }: AddAlertModalProps) {
   const [condition, setCondition] = useState<'below' | 'above'>('below')
   const [targetPrice, setTargetPrice] = useState('')
-  const { toast } = useToast()
 
   const handleSave = () => {
     if (!targetPrice || parseFloat(targetPrice) <= 0) {
-      toast({
-        title: 'Preço inválido',
+      toast.error('Preço inválido', {
         description: 'Por favor, insira um preço válido',
-        variant: 'destructive',
       })
       return
     }
@@ -50,8 +47,7 @@ export function AddAlertModal({
     // Mock save - would save to database in real app
     console.log('Saving alert:', { productId, condition, targetPrice })
 
-    toast({
-      title: 'Alerta configurado!',
+    toast.success('Alerta configurado!', {
       description: `Você será notificado quando o preço estiver ${
         condition === 'below' ? 'abaixo de' : 'acima de'
       } $${targetPrice}`,
