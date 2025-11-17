@@ -38,6 +38,7 @@ func main() {
 
 	http.HandleFunc("/auth/google/login", handleGoogleLogin)
 	http.HandleFunc("/auth/google/callback", handleGoogleCallback)
+	http.HandleFunc("/auth/me", server.AuthenticateMiddleware(handleMe))
 
 	http.HandleFunc("/products", server.AuthenticateMiddleware(handleProducts))
 	http.HandleFunc("/product/info", server.AuthenticateMiddleware(handleProductInfo))
@@ -252,4 +253,23 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+}
+
+func handleMe(w http.ResponseWriter, r *http.Request) {
+    enableCors(&w)
+    if r.Method == "OPTIONS" { return }
+
+    userID, ok := server.GetUserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "Não autorizado", http.StatusUnauthorized)
+        return
+    }
+
+    user, err := data.GetUserByID(userID)
+    if err != nil {
+        http.Error(w, "Usuário não encontrado", 404)
+        return
+    }
+
+    json.NewEncoder(w).Encode(user)
 }

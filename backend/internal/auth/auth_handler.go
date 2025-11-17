@@ -21,6 +21,7 @@ type GoogleUserInfo struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
+	Picture string `json:"picture"`
 }
 
 const oauthStateString = "randomStateString"
@@ -85,7 +86,7 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := data.GetOrCreateUser(userInfo.ID, userInfo.Email, userInfo.Name)
+	user, err := data.GetOrCreateUser(userInfo.ID, userInfo.Email, userInfo.Name, userInfo.Picture)
 	if err != nil {
 		log.Printf("Erro ao salvar/buscar usuário no DB: %v", err)
 		http.Error(w, "Falha no DB.", http.StatusInternalServerError)

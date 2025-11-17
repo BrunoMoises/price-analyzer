@@ -13,6 +13,7 @@ type User struct {
 	GoogleID string `db:"google_id" json:"google_id"`
 	Email    string `db:"email" json:"email"`
 	Name     string `db:"name" json:"name"`
+	AvatarURL string `db:"avatar_url" json:"avatar_url"`
 }
 
 type Product struct {
@@ -34,29 +35,37 @@ type PricePoint struct {
 
 const productCacheTTL = 10 * time.Minute
 
-func GetOrCreateUser(googleID, email, name string) (User, error) {
+func GetOrCreateUser(googleID, email, name, avatarURL string) (User, error) {
 	var user User
-	query := `SELECT id, email, name FROM users WHERE google_id = $1`
-	err := DB.Get(&user, query, googleID)
+	user.GoogleID = googleID
+	user.Email = email
+	user.Name = name
+	user.AvatarURL = avatarURL
 
-	if err == nil {
-		return user, nil
-	}
-	if err != sql.ErrNoRows {
+	query := `
+		INSERT INTO users (google_id, email, name, avatar_url) 
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (google_id) 
+		DO UPDATE SET 
+			email = EXCLUDED.email, 
+			name = EXCLUDED.name, 
+			avatar_url = EXCLUDED.avatar_url
+		RETURNING id`
+	
+	err := DB.QueryRow(query, googleID, email, name, avatarURL).Scan(&user.ID)
+	
+	if err != nil {
 		return User{}, err
 	}
 
-	insertQuery := `INSERT INTO users (google_id, email, name) VALUES ($1, $2, $3) RETURNING id`
-	var newID int
-	err = DB.QueryRow(insertQuery, googleID, email, name).Scan(&newID)
+	return user, nil
+}
 
-	if err == nil {
-		user.ID = newID
-		user.GoogleID = googleID
-		user.Email = email
-		user.Name = name
-	}
-	return user, err
+func GetUserByID(userID int) (User, error) {
+    var user User
+    query := `SELECT id, google_id, email, name, avatar_url FROM users WHERE id = $1`
+    err := DB.Get(&user, query, userID)
+    return user, err
 }
 
 func CreateProduct(p Product) (int, error) {
