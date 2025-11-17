@@ -15,9 +15,7 @@ export function RealTimePrice({ price, size = 'default' }: RealTimePriceProps) {
   const [isConnected, setIsConnected] = useState(true)
 
   useEffect(() => {
-    // Simulate WebSocket connection indicator
     const interval = setInterval(() => {
-      // Randomly simulate price changes for demo
       const random = Math.random()
       if (random > 0.95) {
         setPriceState('drop')
@@ -42,7 +40,7 @@ export function RealTimePrice({ price, size = 'default' }: RealTimePriceProps) {
           priceState === 'rise' && 'text-destructive animate-pulse'
         )}
       >
-        ${price.toFixed(2)}
+        R$ {price.toFixed(2)}
       </div>
       
       {isConnected && (

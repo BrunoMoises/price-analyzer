@@ -127,7 +127,7 @@ export default function ProductDetailsPage() {
               <div className="text-sm text-muted-foreground">
                 Menor preço registrado:{' '}
                 <span className="text-foreground font-semibold">
-                  ${product.lowestPrice.toFixed(2)}
+                  R$ {product.lowestPrice.toFixed(2)}
                 </span>
               </div>
             </div>

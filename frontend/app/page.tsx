@@ -5,6 +5,7 @@ import { Header } from '@/components/header'
 import { AddProductBar } from '@/components/add-product-bar'
 import { ProductGrid } from '@/components/product-grid'
 import { Product, ApiProduct } from '@/lib/types'
+import { toast } from 'sonner'
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -15,10 +16,10 @@ export default function HomePage() {
       id: apiData.id,
       name: apiData.name,
       currentPrice: apiData.price,
-      imageUrl: '/placeholder.svg',
-      lowestPrice: apiData.price,   
-      priceHistory: [],             
-      stores: []                    
+      imageUrl: apiData.image_url || '/placeholder.svg', 
+      lowestPrice: apiData.price,
+      priceHistory: [],
+      stores: []
     }
   }
 
@@ -46,8 +47,43 @@ export default function HomePage() {
     fetchProducts()
   }, [])
 
-  const handleAddProduct = (url: string) => {
-    console.log('TODO: Enviar URL para o Go processar:', url)
+  const handleAddProduct = async (url: string) => {
+    if (!url) return;
+
+    try {
+      console.log("Enviando URL para o backend...", url)
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+      
+      const res = await fetch(`${apiUrl}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Erro ao adicionar produto. Tente novamente mais tarde.')
+      }
+
+      const newApiProduct: ApiProduct = await res.json()
+
+      const newProduct = adaptProduct(newApiProduct)
+      
+      setProducts((prevProducts) => [...prevProducts, newProduct])
+
+      toast.success('Produto adicionado!', {
+        description: 'O produto está sendo monitorado',
+      })
+    } catch (error) {
+      
+      console.error("Falha ao adicionar produto:", error)
+
+      toast.error('Falha ao adicionar produto!', {
+        description: 'Erro ao adicionar produto. Tente uma URL válida.',
+      })
+    }
   }
 
   return (
