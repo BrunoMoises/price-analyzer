@@ -53,8 +53,6 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       # Notificações
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
-      WHATSAPP_PHONE: ${WHATSAPP_PHONE}
-      WHATSAPP_APIKEY: ${WHATSAPP_APIKEY}
     depends_on:
       postgres:
         condition: service_healthy
