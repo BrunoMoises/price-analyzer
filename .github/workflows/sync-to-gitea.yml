@@ -16,14 +16,15 @@ jobs:
 
       - name: Push to Gitea
         run: |
-          # Configura a URL remota com as credenciais injetadas
-          # Formato: https://USER:TOKEN@DOMINIO/USER/REPO.git
+          # 1. Garante que estamos na branch main localmente
+          git checkout main
           
+          # 2. Configura o remote do Gitea
           git remote add gitea "https://${{ secrets.GITEA_USERNAME }}:${{ secrets.GITEA_TOKEN }}@gitea.bruno-moises.site/BrunoMoises/price-analyzer.git"
           
-          # Desabilita verificação estrita de SSL se o certificado for auto-assinado (opcional, mas seguro ter)
+          # 3. Configuração de segurança SSL (opcional, mas bom para certificados LetsEncrypt)
           git config --global http.sslVerify false
           
-          # Empurra código e tags
-          git push gitea main --force
+          # 4. Push explícito da branch main local para a main remota
+          git push gitea main:main --force
           git push gitea --tags --force
