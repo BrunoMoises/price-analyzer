@@ -128,12 +128,18 @@ export default function HomePage() {
     )
   }
 
+  const handleDeleteProduct = (deletedId: string) => {
+      setProducts((currentProducts) => 
+        currentProducts.filter(p => p.id !== deletedId)
+      )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-6 space-y-6">
         <AddProductBar onAddProduct={handleAddProduct} />
-        <ProductGrid products={products} />
+        <ProductGrid products={products} onDeleteProduct={handleDeleteProduct} />
       </main>
     </div>
   )

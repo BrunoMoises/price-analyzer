@@ -3,9 +3,10 @@ import { Product } from '@/lib/types'
 
 interface ProductGridProps {
   products: Product[]
+  onDeleteProduct: (id: string) => void 
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
+export function ProductGrid({ products, onDeleteProduct }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
@@ -19,7 +20,11 @@ export function ProductGrid({ products }: ProductGridProps) {
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard 
+            key={product.id} 
+            product={product} 
+            onDelete={onDeleteProduct} 
+        />
       ))}
     </div>
   )
