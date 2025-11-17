@@ -10,6 +10,7 @@ import (
 
 	"price-analyzer-backend/internal/data"
 	"price-analyzer-backend/internal/web"
+	"price-analyzer-backend/internal/worker"
 )
 
 type AddRequest struct {
@@ -24,6 +25,8 @@ func main() {
 
 	log.Println("Iniciando servidor...")
 	data.ConnectDB()
+
+	worker.StartPriceMonitor()
 
 	http.HandleFunc("/products", handleProducts)
 
