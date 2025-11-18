@@ -8,37 +8,41 @@ on:
 
 jobs:
   deploy:
-    name: Deploy via SSH
-    runs-on: ubuntu-latest
-    
+    runs-on: self-hosted
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Execute remote commands via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        port: 22
-        script: |
-          echo "🚀 Iniciando Deploy Automático..."
-          
-          # 1. Navega para a pasta do projeto
-          cd /var/www/price-analyzer
-          
-          # 2. Garante permissões (opcional, mas bom pra evitar erro de git)
-          # git config --global --add safe.directory /var/www/price-analyzer
-          
-          # 3. Baixa o código novo
-          git pull origin main
-          
-          # 4. Reconstrói e sobe os containers
-          # O flag --build força a recompilação do Go e Next.js
-          docker-compose -f docker-compose.prod.yml up -d --build
-          
-          # 5. Limpeza de imagens antigas (economiza espaço em disco)
-          docker image prune -f
-          
-          echo "✅ Deploy Concluído com Sucesso!"
+      
+    - name: Deploy Local
+      run: |
+        echo "🚀 Runner local iniciado..."
+        
+        # 1. Define a pasta do projeto
+        TARGET_DIR="/var/www/price-analyzer"
+        
+        # 2. Garante que a pasta existe (segurança)
+        if [ ! -d "$TARGET_DIR" ]; then
+          echo "❌ Pasta do projeto não encontrada!"
+          exit 1
+        fi
+        
+        # 3. Navega até a pasta
+        cd $TARGET_DIR
+        
+        # 4. Atualiza o código
+        # Precisamos configurar o git para aceitar o diretório se houver erro de 'safe directory'
+        git config --global --add safe.directory $TARGET_DIR
+        
+        # Reseta qualquer mudança local para evitar conflito e puxa
+        git reset --hard
+        git pull origin main
+        
+        # 5. Sobe os containers
+        # Como estamos no próprio servidor, rodamos direto
+        docker-compose -f docker-compose.prod.yml up -d --build
+        
+        # 6. Limpeza
+        docker image prune -f
+        
+        echo "✅ Deploy Concluído com Sucesso!"
