@@ -14,5 +14,7 @@ RUN apk --no-cache add ca-certificates tzdata
 
 COPY --from=builder /app/server .
 
+COPY --from=builder /app/internal/data/migrations_files ./migrations
+
 EXPOSE 8080
 CMD ["./server"]
