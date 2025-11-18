@@ -13,6 +13,16 @@ import (
 var migrationFS embed.FS
 
 func RunMigrations(dbURL string) {
+	entries, err := migrationFS.ReadDir("migrations_files")
+	if err != nil {
+		log.Fatal("❌ Erro fatal: Não consegui ler a pasta migrations_files dentro do binário:", err)
+	}
+	
+	log.Println("📂 Arquivos encontrados no embed:")
+	for _, e := range entries {
+		log.Println("   -", e.Name())
+	}
+	
 	sourceDriver, err := iofs.New(migrationFS, "migrations_files")
 	if err != nil {
 		log.Fatal("Erro ao criar driver de migração:", err)
