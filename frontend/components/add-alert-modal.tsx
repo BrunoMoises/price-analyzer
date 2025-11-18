@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { getAuthHeader } from '@/app/context/AuthContext' // <--- 1. Importe aqui
 
 interface AddAlertModalProps {
   open: boolean
@@ -54,7 +55,10 @@ export function AddAlertModal({
         
         const res = await fetch(`${apiUrl}/product/alert`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                ...(getAuthHeader() as HeadersInit), 
+                'Content-Type': 'application/json' 
+            },
             body: JSON.stringify({
                 id: Number(productId),
                 target_price: priceFloat
@@ -62,11 +66,12 @@ export function AddAlertModal({
         })
 
         if (!res.ok) {
+            if (res.status === 401) throw new Error("Sessão expirada.")
             throw new Error('Erro na comunicação com servidor')
         }
 
         toast.success('Alerta configurado!', {
-            description: `Você será notificado no WhatsApp quando chegar em R$ ${targetPrice}`,
+            description: `Você será notificado no Telegram quando chegar em R$ ${targetPrice}`,
         })
 
         onOpenChange(false)
@@ -75,7 +80,7 @@ export function AddAlertModal({
     } catch (error) {
         console.error(error)
         toast.error('Erro ao salvar', {
-            description: 'Não foi possível criar o alerta. Tente novamente.',
+            description: 'Não foi possível criar o alerta. Verifique sua conexão.',
         })
     } finally {
         setIsLoading(false)
