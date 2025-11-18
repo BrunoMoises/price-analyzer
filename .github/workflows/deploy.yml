@@ -37,7 +37,13 @@ jobs:
         git pull origin main
         
         # 5. Sobe os containers
-        # Como estamos no próprio servidor, rodamos direto
+        echo "🐳 Atualizando containers..."
+        
+        # Tenta derrubar tudo primeiro para evitar conflito de nomes
+        # O '|| true' garante que o script não pare se der erro aqui (ex: container não existe)
+        docker-compose -f docker-compose.prod.yml down --remove-orphans || true
+        
+        # Sobe limpo
         docker-compose -f docker-compose.prod.yml up -d --build
         
         # 6. Limpeza
