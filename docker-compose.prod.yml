@@ -91,6 +91,51 @@ services:
     networks:
       - app-network
 
+  # --- Backup Local (Dump do Banco) ---
+  backup-db:
+    image: prodrigestivill/postgres-backup-local
+    container_name: price_backup_db
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7 
+      BACKUP_KEEP_WEEKS: 4 
+      BACKUP_KEEP_MONTHS: 6
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  # --- Backup Nuvem (Sync para Google Drive) ---
+  backup-cloud:
+    image: rclone/rclone
+    container_name: price_backup_cloud
+    restart: always
+    entrypoint: "/bin/sh"
+    command: >
+      -c '
+      echo "🚀 Iniciando monitor de sync...";
+      while true; do
+        echo "🔄 Sincronizando com Google Drive...";
+        rclone sync /data gdrive:PriceAnalyzer-Backup --config /config/rclone.conf -v;
+        echo "✅ Sincronização concluída. Dormindo por 24h...";
+        sleep 86400;
+      done
+      '
+    volumes:
+      - ./backups:/data                   
+      - ./rclone.conf:/config/rclone.conf
+    depends_on:
+      - backup-db
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
 
